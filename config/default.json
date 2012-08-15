@@ -1,0 +1,7 @@
+{
+  "zmq": "tcp://localhost:5556",
+  "timeInterval": 2000,
+  "keysThreshold": 25,
+  "wsPort": 7800,
+  "port": 7700
+}

@@ -1,0 +1,92 @@
+<!doctype>
+
+<link rel="stylesheet" href="style.css" type="text/css">
+<link rel="stylesheet" href="vendor/rickshaw.css" type="text/css">
+
+<script src="vendor/d3.min.js"></script>
+<script src="vendor/d3.layout.min.js"></script>
+<script src="vendor/rickshaw.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.min.js"></script>
+
+<h1>Lil Brother Events</h1>
+<div class="layout">
+	<div id="graph_container"></div>
+	<div id="legend"></div>
+</div>
+
+<script src="http://lil-brother-server/socket.io/socket.io.js"></script>
+
+<script>
+
+var config = {
+	wsHost: 'http://lil-brother-server',
+	topic: 'lilbro',
+	tv: 2000
+};
+
+var graph;
+var queue = [];
+var socket = io.connect(config.wsHost);
+
+var segmentation = window.location.search.substring(1);
+
+socket.on('data', function (d) {
+
+	if (!d[config.topic]) return;
+
+	var incrementalData = d[config.topic].counts[segmentation];
+	queue.push(incrementalData);
+});
+
+setInterval( function() {
+
+	var incrementalData = queue.shift() || {};
+
+	graph.series.addData(incrementalData);
+	graph.render();
+
+}, config.tv);
+
+// add a dummy series to get things going
+
+var series = new Rickshaw.Series.FixedDuration([{ name: '_', color: 'black' }], undefined, {
+	timeInterval: config.tv,
+	timeBase: new Date().getTime() / 1000,
+	maxDataPoints: 250
+}); 
+
+window.graph = new Rickshaw.Graph({
+	element: document.getElementById('graph_container'),
+	interpolation: 'step-before',
+	width: 960,
+	height: 500,
+	renderer: 'area',
+	stack: true,
+	stroke: true,
+	series: series
+});
+
+graph.render();
+
+var hoverDetail = new Rickshaw.Graph.HoverDetail({
+	graph: graph
+});
+
+var legend = new Rickshaw.Graph.Legend({
+	graph: graph,
+	element: document.getElementById('legend')
+});
+
+// reach in for lack of a better interface
+
+graph.series.legend = legend;
+
+var axes = new Rickshaw.Graph.Axis.Time({
+	graph: graph
+});
+
+axes.render();
+
+</script>
+
